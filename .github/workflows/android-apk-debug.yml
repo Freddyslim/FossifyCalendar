@@ -1,0 +1,40 @@
+name: Debug APK
+
+# Self-contained debug build for personal sideload testing.
+# Produces app-foss-debug.apk (applicationId org.fossify.calendar.debug),
+# auto-signed with the debug keystore, so it coexists with the official app.
+
+on:
+  push:
+    branches:
+      - feature/share-location
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build foss debug APK
+        run: ./gradlew assembleFossDebug --no-daemon --stacktrace
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fossify-calendar-debug-apk
+          path: app/build/outputs/apk/foss/debug/app-foss-debug.apk
+          if-no-files-found: error
