@@ -479,7 +479,8 @@ class EventActivity : SimpleActivity() {
             updateTexts()
         }
 
-        eventShowOnMap.setOnClickListener { showOnMap() }
+        eventShowOnMap.setOnClickListener { shareLocation() }
+        eventShowOnMap.setOnLongClickListener { showOnMap(); true }
         eventStartDate.setOnClickListener { setupStartDate() }
         eventStartTime.setOnClickListener { setupStartTime() }
         eventEndDate.setOnClickListener { setupEndDate() }
@@ -1866,6 +1867,25 @@ class EventActivity : SimpleActivity() {
 
         val intent = Intent(Intent.ACTION_VIEW, uri)
         launchActivityIntent(intent)
+    }
+
+    // Share the location via the system share sheet (ACTION_SEND) instead of
+    // launching it directly. The system share sheet is the only surface that
+    // bridges Android profiles (e.g. Android 15 Private Space), so this lets the
+    // user pick an app from another profile - matching Fossify Gallery's behavior.
+    // Direct "show on map" remains available via long-press (see setupOnClickListeners).
+    private fun shareLocation() {
+        val locationValue = binding.eventLocation.value
+        if (locationValue.isEmpty()) {
+            toast(R.string.please_fill_location)
+            return
+        }
+
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, locationValue)
+        }
+        startActivity(Intent.createChooser(shareIntent, getString(org.fossify.commons.R.string.share)))
     }
 
     private fun setupStartDate() {
