@@ -1881,9 +1881,25 @@ class EventActivity : SimpleActivity() {
             return
         }
 
+        // Build a maps query: raw lat,lon if the location is coordinates, otherwise the address.
+        val pattern = Pattern.compile(LAT_LON_PATTERN)
+        val query = if (pattern.matcher(locationValue).find()) {
+            val delimiter = if (locationValue.contains(';')) ";" else ","
+            val parts = locationValue.split(delimiter)
+            "${parts.first()},${parts.last()}"
+        } else {
+            locationValue
+        }
+
+        // Share both the human-readable address and a maps https link. ACTION_VIEW (geo:) is NOT
+        // bridged into Android 15 Private Space - only the share sheet (ACTION_SEND) is - so the
+        // link lets a private-space browser or any map app that accepts shared text/links open it.
+        val mapsUrl = "https://www.google.com/maps/search/?api=1&query=${Uri.encode(query)}"
+        val shareText = "$locationValue\n$mapsUrl"
+
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, locationValue)
+            putExtra(Intent.EXTRA_TEXT, shareText)
         }
         startActivity(Intent.createChooser(shareIntent, getString(org.fossify.commons.R.string.share)))
     }
